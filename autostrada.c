@@ -22,6 +22,7 @@ void heapSort(int *arrayCars, int numCars);
 void maxHeapify(int *arrayCars, int num, int heapMax);
 autonomyCars *createListAutonomyCars(int *arrayCarsOrder, int lenArray);
 autonomyCars *insertAutnomyCars(autonomyCars **cars, int *arrayCarsOrder, int lenArray);
+int delateCar(station **head, autonomyCars **listCars, int autonomyCar);
 station *searchStation(station **head, int dist);
 station *treeSuccessor(station **node);
 char getCommand(char lettera);
@@ -40,8 +41,10 @@ int main(int argc, char *argv[]){
     int lenArrayCars = 0;
     station *stazione = NULL;
 
+    /* ++++++++++++ !!!!! FARE ALTRE TEST DI CONTROLLO IN QUANTO NON SONO SICURO NON SIANO PRESENTI ERRORI !!!!! ++++++++++++ */
+
     while(1){ //Ciclo in cui il programma esegue tutto quello che deve eseguire, si dovrà interrompere solamente con Ctrl+C
-        
+        printf("Comando: ");
         //Parte iniziale: lettura del comando
         readOutput = getchar();
         if( readOutput == '\n' ) exit(1); // esce dal programma quando arrivo alla fine dell'eseguzione di tutti i comandi (La posso togliere quando faccio i test sul sito)
@@ -50,8 +53,9 @@ int main(int argc, char *argv[]){
         goToEndLine(' '); //devo leggere i caratteri finchè non arrivo al ' ', dopo di che ci sarà il numero che mi interesserà leggere
 
         if( stazione != NULL && stateTurn != 'a' ){
-            heapSort(&arrayCars, lenArrayCars); //oridnare l'array delle auto
-            insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+            heapSort(arrayCars, lenArrayCars); //oridnare l'array delle auto
+            if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+            else stazione->cars = createListAutonomyCars(arrayCars, lenArrayCars);
             free(arrayCars);//cancellare l'array
             stazione = NULL;
         }
@@ -69,8 +73,8 @@ int main(int argc, char *argv[]){
                         for(int i = 0; i < lenArrayCars; i++){
                             arrayCars[i] = readNumOutput();
                         }
-                        heapSort(arrayCars, arrayCars);
-                        stazione->cars = createListAutonomyCars(&arrayCars, lenArrayCars);
+                        heapSort(arrayCars, lenArrayCars);
+                        stazione->cars = createListAutonomyCars(arrayCars, lenArrayCars);
                     }
                     stazione = NULL;
                     printf("aggiunta\n");   
@@ -90,8 +94,9 @@ int main(int argc, char *argv[]){
                         arrayCars[lenArrayCars - 1] = readNumOutput();
 
                     } else if ( stazione != NULL ){
-                        heapSort(&arrayCars, lenArrayCars); //oridnare l'array delle auto
-                        insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+                        heapSort(arrayCars, lenArrayCars); //oridnare l'array delle auto
+                        if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+                        else stazione->cars = createListAutonomyCars(arrayCars, lenArrayCars);
                         free(arrayCars);//cancellare l'array
                         lenArrayCars = 0;
                         stazione = NULL;
@@ -115,7 +120,7 @@ int main(int argc, char *argv[]){
                 stazione = searchStation( &autostrada, numLine );
                 if( stazione != NULL ){ //la stazione esiste
                     numLine = readNumOutput();
-                    if( delateCar(&(stazione->cars), numLine) ) printf("rottamata\n");
+                    if( delateCar(&autostrada, &(stazione->cars), numLine) ) printf("rottamata\n");
                     else printf("non rottamata\n");
                     stazione = NULL;
                 } else{
@@ -140,6 +145,8 @@ int main(int argc, char *argv[]){
             default:
                 break;
         }
+
+        stationWalk(autostrada);
 
 
     }
@@ -312,6 +319,7 @@ autonomyCars *insertAutnomyCars(autonomyCars **cars, int *arrayCarsOrder, int le
     autonomyCars *head = *cars;
     autonomyCars *nodoPre = NULL;
     autonomyCars *nodo = *cars;
+
     for(int i = lenArray - 1; i >= 0; i--){
         while( (nodo != NULL) && (nodo->autonomy > arrayCarsOrder[i] )){
             nodoPre = nodo;
@@ -320,7 +328,7 @@ autonomyCars *insertAutnomyCars(autonomyCars **cars, int *arrayCarsOrder, int le
         autonomyCars *newNode = (autonomyCars*) malloc( sizeof(autonomyCars) );
         newNode->autonomy = arrayCarsOrder[i];
         newNode->next = nodo;
-        if( i == lenArray - 1 ) head = newNode;
+        if( ( i == lenArray - 1 ) && ( nodoPre == NULL ) ) head = newNode;
         else nodoPre->next = newNode;
         nodoPre = newNode;
     }
@@ -328,16 +336,16 @@ autonomyCars *insertAutnomyCars(autonomyCars **cars, int *arrayCarsOrder, int le
 }
 
 
-int delateCar(autonomyCars **cars, int autonomyCar){
-    autonomyCars *nodo = *cars;
+int delateCar(station **head, autonomyCars **listCars, int autonomyCar){
+    autonomyCars *nodo = *listCars;
     autonomyCars *nodoPrec = NULL;
-    while( autonomyCar <= nodo->autonomy ){
+    while( ( nodo != NULL ) && ( autonomyCar <= nodo->autonomy ) ){
         if( autonomyCar == nodo->autonomy ){
-            nodoPrec->next = nodo->next;
+            if( nodoPrec != NULL ) nodoPrec->next = nodo->next;
+            else  ( (*head)->cars ) = nodo->next;
             free(nodo);
             return 1; // è stata eliminata 
-        }
-        else if( autonomyCar < nodo->autonomy ){
+        } else {
             nodoPrec = nodo;
             nodo = nodo->next;
         }
@@ -372,6 +380,7 @@ station *insertStation(station **head, int numDist){
     figlio->distance = numDist;
     figlio->left = NULL;
     figlio->right = NULL;
+    figlio->cars = NULL;
     figlio->parent = leaf;
     if(leaf == NULL ){
         *head = figlio;
@@ -389,9 +398,14 @@ station *insertStation(station **head, int numDist){
 void stationWalk(station *head){
     if(head != NULL){
         stationWalk(head->left);
-        printf("num nodo: %d \n", head->distance);
-        int sizeNodo = sizeof(head);
-        //printf("dimensione nodo: %d \n", sizeNodo);
+        printf("\nstazione: %d [dimensione: %d] - ", head->distance, sizeof(head));
+        printf("auto:");
+        autonomyCars *macchina = head->cars;
+        while( macchina != NULL ){
+            printf(" %d ", macchina->autonomy );
+            macchina = macchina->next;
+        }
+        printf("\n");
         stationWalk(head->right);
     }
 }

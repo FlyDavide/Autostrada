@@ -24,7 +24,8 @@ station *insertStation(station **head, int numDist, int numCar);
 station *searchStation(station **head, int dist);
 void stationWalk(station *head);
 int readNumOutput();
-void searchPath(station **headS, station **endS, int start, int end, arcPath **headP);
+void searchPathIncreasing(station **headS, station **endS, int start, int end, arcPath **headP);
+void searchPathDecreasing(station **headS, station **endS, int start, int end, arcPath **headP);
 void createPath(station **start, station **end, arcPath **head);
 void updateListPath(arcPath **head, arcPath **node, station **start);
 void addPath(arcPath **head, station **dist, station **end, int numS);
@@ -49,20 +50,31 @@ int main(){
             int dist = readNumOutput();
             int car = readNumOutput();
             stazione = insertStation(&autostrada, dist, car);
-            printf("\ndati Salvati\n");
+            printf("dati Salvati\n");
             break;
         case 'p':
             getchar();
             int start = readNumOutput();
             int end = readNumOutput();
-            station *endStation = NULL;
+            station *endStation;
             arcPath *percorsi = NULL;
             printf("\nStazioni: ");
-            searchPath(&autostrada, &endStation, start, end, &percorsi);
-            walkPath( &(percorsi->startPath) );
-            readPath(&percorsi);
-            //deleteListPath(&percorsi);
-            printf("\nCreazione percorso fine!");
+
+            endStation = searchStation(&autostrada, start);
+            if( start == end ) printf("%d\n", start);
+            else if( endStation->car == 0 ) printf("nessun percorso1\n");
+            else if( endStation->car >= abs(end - start) ) printf("%d %d\n", start, end);
+            else{
+                endStation = NULL;
+                if( start < end ) searchPathIncreasing(&autostrada, &endStation, start, end, &percorsi);
+                else searchPathDecreasing(&autostrada, &endStation, start, end, &percorsi);
+                if( ( percorsi != NULL ) && ( (percorsi->startPath)->distance == start ) ) {
+                    walkPath(&(percorsi->startPath));
+                    readPath(&percorsi);
+                    deleteListPath(&percorsi);
+                    printf("Creazione percorso fine!\n");
+                } else printf("nessun percorso2\n");
+            }
             break;
         default:
             break;
@@ -139,30 +151,47 @@ station *searchStation(station **head, int dist){
 }
 
 //scansione l'albero per creare i percorsi possibili 
-void searchPath(station **headS, station **endS, int start, int end, arcPath **headP){
+void searchPathIncreasing(station **headS, station **endS, int start, int end, arcPath **headP){
     if((*headS) != NULL ){
         if( (*headS)->distance < end ){
-        searchPath(&((*headS)->right), &(*endS), start, end, &(*headP));
+        searchPathIncreasing(&((*headS)->right), &(*endS), start, end, &(*headP));
         }
 
         if( (*headS)->distance >= start && (*headS)->distance < end ){
             createPath(&(*headS), &(*endS), &(*headP));
-            //printf("%d ", (*headS)->distance);
         } else if( (*headS)->distance == end ){
             (*headS)->path = NULL;
             (*endS) = (*headS);
         }
 
         if ( (*headS)->distance >= start ){
-            searchPath( &((*headS)->left), &(*endS), start, end, &(*headP));
+            searchPathIncreasing( &((*headS)->left), &(*endS), start, end, &(*headP));
         }
     }
-
 }
 
+void searchPathDecreasing(station **headS, station **endS, int start, int end, arcPath **headP){
+    if((*headS) != NULL ){
+        if( (*headS)->distance > end ){
+        searchPathDecreasing(&((*headS)->left), &(*endS), start, end, &(*headP));
+        }
+
+        if( (*headS)->distance <= start && (*headS)->distance > end ){
+            createPath(&(*headS), &(*endS), &(*headP));
+        } else if( (*headS)->distance == end ){
+            (*headS)->path = NULL;
+            (*endS) = (*headS);
+        }
+
+        if ( (*headS)->distance <= start ){
+            searchPathDecreasing( &((*headS)->right), &(*endS), start, end, &(*headP));
+        }
+    }
+}
+
+
 void createPath(station **start, station **end, arcPath **head){
-    if( (*start)->car >= ( (*end)->distance - (*start)->distance ) ){
-        //Aggiungo questa stazione nella lista delle stazioni possibili di percorrenza
+    if( (*start)->car >= abs( (*end)->distance - (*start)->distance ) ){
         addPath(&(*head), &(*start), &(*end), 1);
     }
     else{
@@ -170,17 +199,17 @@ void createPath(station **start, station **end, arcPath **head){
         arcPath *choseNodeP = NULL;
         station *choseNodeS = NULL;
         int numS;
-        while( ( nodeCur != NULL ) && ( (*start)->car >= ( (nodeCur->startPath)->distance - (*start)->distance ) ) ){
+        while( ( nodeCur != NULL ) && ( (*start)->car >= abs( (nodeCur->startPath)->distance - (*start)->distance ) ) ){
             if( ( choseNodeP == NULL && choseNodeS == NULL ) || ( nodeCur->numStation < numS ) ||
                 ( ( nodeCur->numStation == numS ) && (
-                    ( ( choseNodeP != NULL ) && ( ((nodeCur->startPath)->distance - (*start)->distance) < ( (choseNodeP->startPath)->distance - (*start)->distance) ) ) ||
-                    ( (choseNodeS != NULL) && ( ((nodeCur->startPath)->distance - (*start)->distance) < ( choseNodeS->distance - (*start)->distance)) ) 
+                    ( ( choseNodeP != NULL ) && ( (nodeCur->startPath)->distance < (choseNodeP->startPath)->distance  ) ) ||
+                    ( (choseNodeS != NULL) && ( (nodeCur->startPath)->distance  < choseNodeS->distance ) )
                 ) )  
             ){
                 numS = nodeCur->numStation;
                 choseNodeP = nodeCur;
                 choseNodeS = nodeCur->startPath;
-                while( numS > 1 && ( (*start)->car >= ( (choseNodeS->path)->distance - (*start)->distance) ) ){
+                while( numS > 1 && ( (*start)->car >= abs( (choseNodeS->path)->distance - (*start)->distance) ) ){
                     choseNodeS = choseNodeS->path;
                     --numS;
                 }
@@ -240,10 +269,9 @@ void deleteListPath(arcPath **head){
 void walkPath(station **startPath){
     station *node = *startPath;
     while( node != NULL ){
-        printf(" %d ", node->distance );
+        printf(" %d", node->distance );
         node = node->path;
     }
-    
 }
 
 void readPath(arcPath **head){

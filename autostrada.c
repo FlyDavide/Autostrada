@@ -28,8 +28,19 @@ typedef struct nodeCars{
 
 station *insertStation(station **head, int numDist);
 station *searchStation(station **head, int dist);
+void delateStation(station **head, station **nodeToDelate);
+station *treeSuccessor(station **node);
 void stationWalk(station *head);
+
 int readNumOutput();
+void heapSort(int *arrayCars, int numCars);
+void maxHeapify(int *arrayCars, int num, int heapMax);
+
+autonomyCars *createListAutonomyCars(int *arrayCarsOrder, int lenArray);
+autonomyCars *insertAutnomyCars(autonomyCars **cars, int *arrayCarsOrder, int lenArray);
+int delateCar(station **head, autonomyCars **listCars, int autonomyCar);
+void deleteListCars(autonomyCars **head);
+
 void searchPathIncreasing(station **headS, station **endS, int start, int end, arcPath **headP);
 void searchPathDecreasing(station **headS, station **endS, int start, int end, arcPath **headP);
 void createPath(station **start, station **end, arcPath **head);
@@ -394,7 +405,7 @@ void delateStation(station **head, station **nodeToDelate){
     free(y);
 }
 
- station *treeSuccessor(station **node){
+station *treeSuccessor(station **node){
     station *x = NULL;
     if((*node)->right != NULL){
         x = (*node)->right;

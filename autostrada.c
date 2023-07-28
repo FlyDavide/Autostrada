@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define maxArray 50
+#define maxArray 100
 
 typedef struct nodeStation {
     int distance;
@@ -9,8 +9,7 @@ typedef struct nodeStation {
     struct nodeStation *right;
     struct nodeStation *left;
     struct nodeStation *path;
-} station; //Stazioni che rappresentano l'autostrada
-
+} station;
 
 typedef struct pathStation {
     int numStation;
@@ -22,14 +21,13 @@ typedef struct pathStation {
 typedef struct nodeCars{
     int autonomy;
     struct nodeCars *next;
-} autonomyCars; //rappresenta la lista di auto di una determinata stazione
+} autonomyCars;
 
 
 station *insertStation(station **head, int numDist);
 station *searchStation(station **head, int dist);
 void delateStation(station **head, station **nodeToDelate);
 station *treeSuccessor(station **node);
-void stationWalk(station *head);
 
 int readNumOutput();
 void goToEndLine(char stop);
@@ -49,7 +47,6 @@ void updateListPath(arcPath **head, arcPath **node, station **start);
 void addPath(arcPath **head, station **dist, station **end, int numS);
 void deleteListPath(arcPath **head);
 void walkPath(station **startPath);
-void readPath(arcPath **head);
 int searcBestPath(station *firstPath, station *secondPath, int numStation);
 
 
@@ -59,36 +56,31 @@ int main(){
     int stateTurn; 
     int numLine;
     int maxArrayAuto = maxArray;
-    int readOutput; //Carattere che verrà letto dall'output, uno alla volta.
+    int readOutput;
     int *arrayCars = NULL;
     int lenArrayCars = 0;
     int end;
     station *stazione = NULL;
     arcPath *percorsi = NULL;
 
-    //int t= 1; //da eliminare; 
+    while( (readOutput = getchar()) != EOF ){
 
-    while( (readOutput = getchar()) == 'a' || readOutput == 'd' || readOutput == 'r' || readOutput == 'p'){ //Ciclo in cui il programma esegue tutto quello che deve eseguire, si dovrà interrompere solamente con Ctrl+C
-        //printf("%d: ", t++);
-
-        stateTurn = getCommand(readOutput); //ora conosco il comando che devo eseguire
-        
-        goToEndLine(' '); //devo leggere i caratteri finchè non arrivo al ' ', dopo di che ci sarà il numero che mi interesserà leggere
+        stateTurn = getCommand(readOutput);
+        goToEndLine(' ');
 
         if( stazione != NULL && stateTurn != 'a' ){
-            heapSort(arrayCars, lenArrayCars); //oridnare l'array delle auto
-            if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+            heapSort(arrayCars, lenArrayCars);
+            if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars);
             else stazione->cars = createListAutonomyCars(arrayCars, lenArrayCars);
-            free(arrayCars);//cancellare l'array
+            free(arrayCars);
             stazione = NULL;
             maxArrayAuto = maxArray;
         }
 
-        numLine = readNumOutput(); //leggo la stazione e poi verifico se esite o meno
+        numLine = readNumOutput();
 
         switch (stateTurn) {
             case 's':
-                /* aggiungi stazione */
                 stazione = insertStation( &autostrada, numLine );
                 if( stazione != NULL ){
                     lenArrayCars = readNumOutput();
@@ -109,8 +101,6 @@ int main(){
                 }
                 break;
             case 'a':
-                /* aggiungi auto */
-
                 if( ( stazione != NULL ) && ( numLine == stazione->distance ) ){
                     ++lenArrayCars;
                     if( lenArrayCars > maxArrayAuto ){
@@ -120,10 +110,10 @@ int main(){
                     arrayCars[lenArrayCars - 1] = readNumOutput();
 
                 } else if ( stazione != NULL ){
-                    heapSort(arrayCars, lenArrayCars); //oridnare l'array delle auto
-                    if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars); //inserisco le auto nella lista della stazione
+                    heapSort(arrayCars, lenArrayCars);
+                    if( stazione->cars != NULL ) stazione->cars = insertAutnomyCars(&(stazione->cars), arrayCars, lenArrayCars);
                     else stazione->cars = createListAutonomyCars(arrayCars, lenArrayCars);
-                    free(arrayCars);//cancellare l'array
+                    free(arrayCars);
                     lenArrayCars = 0;
                     stazione = NULL;
                     maxArrayAuto = maxArray;
@@ -144,9 +134,8 @@ int main(){
                 printf("aggiunta\n");
                 break;
             case 'r':
-                /* rottama auto */
                 stazione = searchStation( &autostrada, numLine );
-                if( stazione != NULL ){ //la stazione esiste
+                if( stazione != NULL ){
                     numLine = readNumOutput();
                     if( delateCar(&stazione, &(stazione->cars), numLine) ) printf("rottamata\n");
                     else printf("non rottamata\n");
@@ -157,7 +146,6 @@ int main(){
                 }
                 break;
             case 'd':
-                /* demolisci stazione */
                 stazione = searchStation( &autostrada, numLine );
                 if( stazione != NULL ){
                     delateStation(&autostrada, &stazione);
@@ -166,21 +154,16 @@ int main(){
                 } else printf("non demolita\n");
                 break;
             case 'p':
-                /* stampo il percorso possibile da raggiungere */
-                //stationWalk(autostrada); // DA ELIMINAREEEEE
                 end = readNumOutput();
-
                 stazione = searchStation(&autostrada, numLine);
                 if( numLine == end ) printf("%d\n", numLine);
                 else if( stazione->cars == NULL ) printf("nessun percorso\n");
                 else if( (stazione->cars)->autonomy >= abs(end - numLine) ) printf("%d %d\n", numLine, end);
                 else{
-                    //stazione = NULL;
                     if( numLine < end ) searchPathIncreasing(&autostrada, &stazione, numLine, end, &percorsi);
                     else searchPathDecreasing(&autostrada, &stazione, numLine, end, &percorsi);
                     if( ( percorsi != NULL ) && ( (percorsi->startPath)->distance == numLine ) ) {
                         walkPath(&(percorsi->startPath));
-                        //readPath(&percorsi);
                         deleteListPath(&percorsi);
                     } else printf("nessun percorso\n");
                 }
@@ -190,7 +173,6 @@ int main(){
             default:
                 break;
         }
-        //stationWalk(autostrada);
     }
     return 0;
 }
@@ -208,28 +190,19 @@ int readNumOutput(){
     return atoi(num);
 }
 
-//mi restituisce il carattere dell'azione che devo compiere:
 char getCommand(char lettera){
     char c = lettera;
     if( c == 'a' ){
-        while( ( c = getchar() ) != '-'){
-            //empty (non faccio nulla)
-        }
+        while( ( c = getchar() ) != '-'){}
         c = getchar();
     }
     return c;
 }
 
-//scorro la lettura dei dati inseriti dall'utente senza far nulla in quanto non mi sono di interesse ma devo solo arrivare
 void goToEndLine(char stop){
-    while( getchar() != stop ){
-        //empty
-    }
+    while( getchar() != stop ){}
 }
 
-
-
-//uso il HeapSort per ordinare l'array in modo crescente così che io possa poi inserire i valori in una lista, con il primo valore quello più grande [ T(n) = O(n) ]:
 void heapSort(int *arrayCars, int numCars){
     for(int i = (numCars/2) - 1 ; i >= 0; i--){
         maxHeapify(arrayCars, i, numCars);
@@ -259,10 +232,7 @@ void maxHeapify(int *arrayCars, int num, int heapMax){
         maxHeapify(arrayCars, max, heapMax);
     }
 }
-//------------------------------------------------------------------------------------
 
-//inserire gli elementi della lista di auto: inserimento in testa: [T(n) = O(1)(costo inserimento per un elemento) ma viene fatto per ogni elemento delle auto quindi => T(n) = O(n)]
-//Creo una lista contenente l'autonomia di tutte le auto inserite nell'array (oridnato in modo crescente), sapendo che la Lista delle auto sarà in ordine decrescente
 autonomyCars *createListAutonomyCars(int *arrayCarsOrder, int lenArray){
     autonomyCars *head = NULL;
     for(int i = 0; i < lenArray; i++){
@@ -303,13 +273,13 @@ int delateCar(station **head, autonomyCars **listCars, int autonomyCar){
             if( nodoPrec != NULL ) nodoPrec->next = nodo->next;
             else ( (*head)->cars ) = nodo->next;
             free(nodo);
-            return 1; // è stata eliminata 
+            return 1;
         } else {
             nodoPrec = nodo;
             nodo = nodo->next;
         }
     }
-    return 0; //non è stata trovata
+    return 0;
 }
 
 void deleteListCars(autonomyCars **head){
@@ -322,13 +292,12 @@ void deleteListCars(autonomyCars **head){
     }
 }
 
-//inserisco una nuova stazione nell'albero, se esiste di già restituisco 0 se no 1.
 station *insertStation(station **head, int numDist){
-    station *leaf = NULL; //foglia, il nodo che non avrà figli
+    station *leaf = NULL;
     station *nodo = *head;
     while(nodo != NULL){
         leaf = nodo;
-        if ( numDist ==  nodo->distance) return NULL; //non aggiungo il nodo in quanto è già presente
+        if ( numDist ==  nodo->distance) return NULL;
         else if( numDist >  nodo->distance ){
             nodo = nodo->right;
         } else {
@@ -350,29 +319,7 @@ station *insertStation(station **head, int numDist){
     else {
         leaf->left = figlio;
     }
-    return figlio; //ha inserito la stazione correttamente
-}
-
-//percorro l'albero delle stazzioni
-void stationWalk(station *head){
-    if(head != NULL){
-        stationWalk(head->left);
-
-        printf("\t>> stazione: %d -> ", head->distance);
-        autonomyCars *macchina = head->cars;
-        printf("auto:");
-        if( macchina != NULL ) printf(" %d", macchina->autonomy);
-        /* mi stampa tutte le auto*/
-        /*
-        while( macchina != NULL ){
-            printf(" %d", macchina->autonomy );
-            macchina = macchina->next;
-        }
-        */
-        printf("\n");
-
-        stationWalk(head->right);
-    }
+    return figlio;
 }
 
 station *searchStation(station **head, int dist){
@@ -382,10 +329,9 @@ station *searchStation(station **head, int dist){
         else if(dist > nodo->distance ) nodo = nodo->right;
         else nodo = nodo->left;
     }
-    return NULL; // non è stato trovato nessun valore con questo nodo
+    return NULL;
 }
 
-//Cancellare la stazione (Da completare !!)
 void delateStation(station **head, station **nodeToDelate){
     station *y = NULL;
     station *x = NULL;
@@ -413,9 +359,9 @@ void delateStation(station **head, station **nodeToDelate){
     if(y != *nodeToDelate){
         (*nodeToDelate)->distance = y->distance;
         (*nodeToDelate)->path = y->path;
-        deleteListCars(&((*nodeToDelate)->cars)); //elimino la lista delle auto
+        deleteListCars(&((*nodeToDelate)->cars));
         (*nodeToDelate)->cars = y->cars;
-    } else deleteListCars(&(y->cars)); //elimino la lista delle auto
+    } else deleteListCars(&(y->cars));
     free(y);
 }
 
@@ -437,7 +383,6 @@ station *treeSuccessor(station **node){
     
 }
 
-//scansione l'albero per creare i percorsi possibili 
 void searchPathIncreasing(station **headS, station **endS, int start, int end, arcPath **headP){
     if((*headS) != NULL ){
         if( (*headS)->distance < end ){
@@ -495,7 +440,6 @@ void createPath(station **start, station **end, arcPath **head){
             if( numS == -1 ){
                 numS = nodeCur->numStation;
                 chosenPath = nodeCur;
-                //choseNodeS = nodeCur->startPath;
             }
 
             nodePathCur = nodeCur->startPath;
@@ -517,7 +461,6 @@ void createPath(station **start, station **end, arcPath **head){
             }
 
             if( numCur == numS ){
-                //devo capire qual è il percorso migliore:
                 if( choseNodeS != NULL && nodePathCur != choseNodeS ){
                     equal = searcBestPath( nodePathCur, choseNodeS, numS);
                     if( equal == 1 ) choseNodeS = nodePathCur;
@@ -530,11 +473,10 @@ void createPath(station **start, station **end, arcPath **head){
             nodeCur = nodeCur->next;
         }
 
-        //aggiorno il valore della lista dei possibili percorsi: faccio un update
-        if( chosenPath != NULL ){//aggiorno l'arco
+        if( chosenPath != NULL ){
             updateListPath(&(*head), &chosenPath, &(*start)); 
         }
-        else if ( choseNodeS != NULL ){//aggiungo un nuovo arco
+        else if ( choseNodeS != NULL ){
             addPath(&(*head), &(*start), &choseNodeS, numS + 1);
         }
     }
@@ -542,10 +484,7 @@ void createPath(station **start, station **end, arcPath **head){
 
 int searcBestPath(station *firstPath, station *secondPath, int numStation){
     if( numStation >= 1){
-        //printf("Prova N: %d ", numStation);
-        //printf("Nodo F:  %d, Nodo S: %d\n", firstPath->distance, secondPath->distance );
         int end = searcBestPath( firstPath->path, secondPath->path, numStation - 1);
-        //printf("Prova end: %d ", end);
         if( end != 0 ) return end;
         else {
             if( firstPath->distance < secondPath->distance ) return 1;
@@ -556,7 +495,6 @@ int searcBestPath(station *firstPath, station *secondPath, int numStation){
     return 0;
 }
 
-//L'aggiornamento consiste nel prendere il nodo che deve essere aggiornato e spostarlo all'inizio della lista in quanto sarà quello più vicino
 void updateListPath(arcPath **head, arcPath **node, station **start){
     if( (*head) != (*node) ){
         arcPath *nodoPrec = (*node)->prec;
@@ -601,14 +539,4 @@ void walkPath(station **startPath){
         else printf("%d\n", node->distance );
         node = node->path;
     }
-}
-
-void readPath(arcPath **head){
-    arcPath *nodo = *head;
-    printf("\nLista Percorsi: ");
-    while( nodo != NULL ){
-        printf(" [ dist: %d , numS: %d ]", (nodo->startPath)->distance, nodo->numStation);
-        nodo = nodo->next;
-    }
-    printf("\n");
 }

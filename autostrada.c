@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#define maxArray 50;
+#define maxArray 50
 
 typedef struct nodeStation {
     int distance;
@@ -33,6 +32,8 @@ station *treeSuccessor(station **node);
 void stationWalk(station *head);
 
 int readNumOutput();
+void goToEndLine(char stop);
+char getCommand(char lettera);
 void heapSort(int *arrayCars, int numCars);
 void maxHeapify(int *arrayCars, int num, int heapMax);
 
@@ -49,28 +50,27 @@ void addPath(arcPath **head, station **dist, station **end, int numS);
 void deleteListPath(arcPath **head);
 void walkPath(station **startPath);
 void readPath(arcPath **head);
+int searcBestPath(station *firstPath, station *secondPath, int numStation);
 
 
-int main(int argc, char *argv[]){
-    printf("Inizio programma\n");
-    
+int main(){    
     station *autostrada = NULL;
     
-    char stateTurn; 
+    int stateTurn; 
     int numLine;
     int maxArrayAuto = maxArray;
-    char readOutput; //Carattere che verrà letto dall'output, uno alla volta.
+    int readOutput; //Carattere che verrà letto dall'output, uno alla volta.
     int *arrayCars = NULL;
     int lenArrayCars = 0;
+    int end;
     station *stazione = NULL;
-    printf("\n");
-    /* ++++++++++++ !!!!! FARE ALTRE TEST DI CONTROLLO IN QUANTO NON SONO SICURO NON SIANO PRESENTI ERRORI !!!!! ++++++++++++ */
+    arcPath *percorsi = NULL;
 
-    while(1){ //Ciclo in cui il programma esegue tutto quello che deve eseguire, si dovrà interrompere solamente con Ctrl+C
-        printf("Comando: ");
-        //Parte iniziale: lettura del comando
-        readOutput = getchar();
-        if( readOutput == '\n' ) exit(1); // esce dal programma quando arrivo alla fine dell'eseguzione di tutti i comandi (La posso togliere quando faccio i test sul sito)
+    //int t= 1; //da eliminare; 
+
+    while( (readOutput = getchar()) == 'a' || readOutput == 'd' || readOutput == 'r' || readOutput == 'p'){ //Ciclo in cui il programma esegue tutto quello che deve eseguire, si dovrà interrompere solamente con Ctrl+C
+        //printf("%d: ", t++);
+
         stateTurn = getCommand(readOutput); //ora conosco il comando che devo eseguire
         
         goToEndLine(' '); //devo leggere i caratteri finchè non arrivo al ' ', dopo di che ci sarà il numero che mi interesserà leggere
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
                 stazione = searchStation( &autostrada, numLine );
                 if( stazione != NULL ){ //la stazione esiste
                     numLine = readNumOutput();
-                    if( delateCar(&autostrada, &(stazione->cars), numLine) ) printf("rottamata\n");
+                    if( delateCar(&stazione, &(stazione->cars), numLine) ) printf("rottamata\n");
                     else printf("non rottamata\n");
                     stazione = NULL;
                 } else{
@@ -167,12 +167,12 @@ int main(int argc, char *argv[]){
                 break;
             case 'p':
                 /* stampo il percorso possibile da raggiungere */
-                arcPath *percorsi = NULL;
-                int end = readNumOutput();
+                //stationWalk(autostrada); // DA ELIMINAREEEEE
+                end = readNumOutput();
 
                 stazione = searchStation(&autostrada, numLine);
                 if( numLine == end ) printf("%d\n", numLine);
-                else if( stazione->cars == NULL ) printf("nessun percorso1\n");
+                else if( stazione->cars == NULL ) printf("nessun percorso\n");
                 else if( (stazione->cars)->autonomy >= abs(end - numLine) ) printf("%d %d\n", numLine, end);
                 else{
                     //stazione = NULL;
@@ -180,19 +180,21 @@ int main(int argc, char *argv[]){
                     else searchPathDecreasing(&autostrada, &stazione, numLine, end, &percorsi);
                     if( ( percorsi != NULL ) && ( (percorsi->startPath)->distance == numLine ) ) {
                         walkPath(&(percorsi->startPath));
-                        readPath(&percorsi);
+                        //readPath(&percorsi);
                         deleteListPath(&percorsi);
-                    } else printf("nessun percorso2\n");
+                    } else printf("nessun percorso\n");
                 }
                 stazione = NULL;
+                percorsi = NULL;
                 break;
             default:
                 break;
         }
-        stationWalk(autostrada);
-
-    }    
+        //stationWalk(autostrada);
+    }
+    return 0;
 }
+
 int readNumOutput(){ 
     int pos = 0;
     char num[12];
@@ -220,7 +222,9 @@ char getCommand(char lettera){
 
 //scorro la lettura dei dati inseriti dall'utente senza far nulla in quanto non mi sono di interesse ma devo solo arrivare
 void goToEndLine(char stop){
-    while( getchar() != stop ){ }
+    while( getchar() != stop ){
+        //empty
+    }
 }
 
 
@@ -297,7 +301,7 @@ int delateCar(station **head, autonomyCars **listCars, int autonomyCar){
     while( ( nodo != NULL ) && ( autonomyCar <= nodo->autonomy ) ){
         if( autonomyCar == nodo->autonomy ){
             if( nodoPrec != NULL ) nodoPrec->next = nodo->next;
-            else  ( (*head)->cars ) = nodo->next;
+            else ( (*head)->cars ) = nodo->next;
             free(nodo);
             return 1; // è stata eliminata 
         } else {
@@ -353,14 +357,20 @@ station *insertStation(station **head, int numDist){
 void stationWalk(station *head){
     if(head != NULL){
         stationWalk(head->left);
-        printf("\nstazione: %d [dimensione: %d] - ", head->distance, sizeof(head));
-        printf("auto:");
+
+        printf("\t>> stazione: %d -> ", head->distance);
         autonomyCars *macchina = head->cars;
+        printf("auto:");
+        if( macchina != NULL ) printf(" %d", macchina->autonomy);
+        /* mi stampa tutte le auto*/
+        /*
         while( macchina != NULL ){
-            printf(" %d ", macchina->autonomy );
+            printf(" %d", macchina->autonomy );
             macchina = macchina->next;
         }
+        */
         printf("\n");
+
         stationWalk(head->right);
     }
 }
@@ -400,8 +410,12 @@ void delateStation(station **head, station **nodeToDelate){
     else{
         (y->parent)->right = x;
     }
-    if(y != *nodeToDelate) (*nodeToDelate)->distance = y->distance;
-    deleteListCars(&(y->cars)); //elimino la lista delle auto
+    if(y != *nodeToDelate){
+        (*nodeToDelate)->distance = y->distance;
+        (*nodeToDelate)->path = y->path;
+        deleteListCars(&((*nodeToDelate)->cars)); //elimino la lista delle auto
+        (*nodeToDelate)->cars = y->cars;
+    } else deleteListCars(&(y->cars)); //elimino la lista delle auto
     free(y);
 }
 
@@ -469,36 +483,77 @@ void createPath(station **start, station **end, arcPath **head){
     }
     else{
         arcPath *nodeCur = *head;
-        arcPath *choseNodeP = NULL;
+        arcPath *chosenPath = NULL;
         station *choseNodeS = NULL;
-        int numS;
+        station *nodePathCur = NULL;
+
+        int numS = -1;
+        int numCur = -1;
+        int equal = 0;
+
         while( ( nodeCur != NULL ) && ( ((*start)->cars)->autonomy >= abs( (nodeCur->startPath)->distance - (*start)->distance ) ) ){
-            if( ( choseNodeP == NULL && choseNodeS == NULL ) || ( nodeCur->numStation < numS ) ||
-                ( ( nodeCur->numStation == numS ) && (
-                    ( ( choseNodeP != NULL ) && ( (nodeCur->startPath)->distance < (choseNodeP->startPath)->distance  ) ) ||
-                    ( (choseNodeS != NULL) && ( (nodeCur->startPath)->distance  < choseNodeS->distance ) )
-                ) )  
-            ){
+            if( numS == -1 ){
                 numS = nodeCur->numStation;
-                choseNodeP = nodeCur;
-                choseNodeS = nodeCur->startPath;
-                while( numS > 1 && ( ((*start)->cars)->autonomy >= abs( (choseNodeS->path)->distance - (*start)->distance) ) ){
-                    choseNodeS = choseNodeS->path;
-                    --numS;
+                chosenPath = nodeCur;
+                //choseNodeS = nodeCur->startPath;
+            }
+
+            nodePathCur = nodeCur->startPath;
+            numCur = nodeCur->numStation;
+
+            if( numS > numCur ){
+                chosenPath = nodeCur;
+                choseNodeS = NULL;
+                numS = numCur;
+            }
+            while( (numCur - 1) >= 1 && ((*start)->cars)->autonomy >= abs( ((nodePathCur->path)->distance - (*start)->distance ) ) ){
+                if( (numCur - 1) < numS ){
+                    choseNodeS = nodePathCur->path;
+                    chosenPath = NULL;
+                    numS = numCur - 1;
                 }
-                if( choseNodeP->startPath != choseNodeS ) choseNodeP = NULL;
-                else choseNodeS = NULL;
+                nodePathCur = nodePathCur->path;
+                --numCur;
+            }
+
+            if( numCur == numS ){
+                //devo capire qual è il percorso migliore:
+                if( choseNodeS != NULL && nodePathCur != choseNodeS ){
+                    equal = searcBestPath( nodePathCur, choseNodeS, numS);
+                    if( equal == 1 ) choseNodeS = nodePathCur;
+                }
+                else if( chosenPath != NULL && chosenPath->startPath != nodePathCur ){
+                    equal = searcBestPath( nodePathCur, chosenPath->startPath, numS);
+                    if( equal == 1 ) chosenPath = nodeCur;
+                }
             }
             nodeCur = nodeCur->next;
         }
+
         //aggiorno il valore della lista dei possibili percorsi: faccio un update
-        if( choseNodeP != NULL ){//aggiorno l'arco
-            updateListPath(&(*head), &choseNodeP, &(*start)); 
+        if( chosenPath != NULL ){//aggiorno l'arco
+            updateListPath(&(*head), &chosenPath, &(*start)); 
         }
         else if ( choseNodeS != NULL ){//aggiungo un nuovo arco
             addPath(&(*head), &(*start), &choseNodeS, numS + 1);
         }
     }
+}
+
+int searcBestPath(station *firstPath, station *secondPath, int numStation){
+    if( numStation >= 1){
+        //printf("Prova N: %d ", numStation);
+        //printf("Nodo F:  %d, Nodo S: %d\n", firstPath->distance, secondPath->distance );
+        int end = searcBestPath( firstPath->path, secondPath->path, numStation - 1);
+        //printf("Prova end: %d ", end);
+        if( end != 0 ) return end;
+        else {
+            if( firstPath->distance < secondPath->distance ) return 1;
+            else if( firstPath->distance > secondPath->distance ) return 2;
+            else return 0;
+        }
+    }
+    return 0;
 }
 
 //L'aggiornamento consiste nel prendere il nodo che deve essere aggiornato e spostarlo all'inizio della lista in quanto sarà quello più vicino
@@ -542,7 +597,8 @@ void deleteListPath(arcPath **head){
 void walkPath(station **startPath){
     station *node = *startPath;
     while( node != NULL ){
-        printf(" %d", node->distance );
+        if( node->path != NULL ) printf("%d ", node->distance );
+        else printf("%d\n", node->distance );
         node = node->path;
     }
 }
@@ -555,22 +611,4 @@ void readPath(arcPath **head){
         nodo = nodo->next;
     }
     printf("\n");
-}
-
-
-void readPath(arcPath **head){
-    arcPath *nodo = *head;
-    printf("\nLista Percorsi: ");
-    while( nodo != NULL ){
-        printf(" [ dist: %d , numS: %d ]", (nodo->startPath)->distance, nodo->numStation);
-        nodo = nodo->next;
-    }
-}
-
-void walkPath(station **startPath){
-    station *node = *startPath;
-    while( node != NULL ){
-        printf(" %d", node->distance );
-        node = node->path;
-    }
 }

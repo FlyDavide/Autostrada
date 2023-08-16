@@ -435,6 +435,7 @@ void createPath(station **start, station **end, arcPath **head){
         int numS = -1;
         int numCur = -1;
         int equal = 0;
+        int same = -1;
 
         while( ( nodeCur != NULL ) && ( ((*start)->cars)->autonomy >= abs( (nodeCur->startPath)->distance - (*start)->distance ) ) ){
             if( numS == -1 ){
@@ -455,13 +456,23 @@ void createPath(station **start, station **end, arcPath **head){
                     choseNodeS = nodePathCur->path;
                     chosenPath = NULL;
                     numS = numCur - 1;
-                }
+                    same = -1;
+                } else if( (numCur - 1) == numS ) same = 0;
                 nodePathCur = nodePathCur->path;
                 --numCur;
             }
 
             if( numCur == numS ){
-                if( choseNodeS != NULL && nodePathCur != choseNodeS ){
+                if( same == 0){
+                    if( choseNodeS != NULL ) equal = searcBestPath( nodePathCur, choseNodeS, numS);
+                    else equal = searcBestPath( nodePathCur, chosenPath->startPath, numS);
+                    if( equal == 1 ){
+                        choseNodeS = nodePathCur;
+                        chosenPath = NULL;
+                    }
+                    same = -1;
+                }
+                else if( choseNodeS != NULL && nodePathCur != choseNodeS ){
                     equal = searcBestPath( nodePathCur, choseNodeS, numS);
                     if( equal == 1 ) choseNodeS = nodePathCur;
                 }
@@ -484,12 +495,12 @@ void createPath(station **start, station **end, arcPath **head){
 
 int searcBestPath(station *firstPath, station *secondPath, int numStation){
     if( numStation >= 1){
+        if( firstPath->distance == secondPath->distance ) return 0;
         int end = searcBestPath( firstPath->path, secondPath->path, numStation - 1);
         if( end != 0 ) return end;
         else {
             if( firstPath->distance < secondPath->distance ) return 1;
-            else if( firstPath->distance > secondPath->distance ) return 2;
-            else return 0;
+            else return 2;
         }
     }
     return 0;
